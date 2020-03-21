@@ -48,9 +48,9 @@ struct Vec3 {
     float norm() const { 
         return std::sqrt(x*x + y*y + z*z); 
     }
-    
     Vec3<T>& normalize(T l = 1) {
-        return (*this) * (1 / norm());
+        (*this) = (*this) * (l / norm());
+        return *this;
     }
 
     template <class >
