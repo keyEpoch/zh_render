@@ -47,6 +47,7 @@ void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
         Vec2i A =               t0 + (t2-t0)*alpha;
         Vec2i B = second_half ? t1 + (t2-t1)*beta : t0 + (t1-t0)*beta;
         if (A.x>B.x) std::swap(A, B);
+        // 填充方式为水平线段填充
         for (int j=A.x; j<=B.x; j++) {   // draw lines horizontally
             image.set(j, t0.y+i, color); // attention, due to int casts t0.y+i != A.y
         }
