@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <cassert>
 
 template <typename T>
 struct Vec2 {
@@ -23,14 +24,19 @@ struct Vec2 {
     inline Vec2<T> operator *(float f) const {
         return Vec2<T>(u * f, v * f);
     }
+
+    T operator[](const size_t i) {
+        assert(i == 0 || i == 1);
+        return (i == 0) ? this->x : this->y; 
+    }
     template <class > friend std::ostream& operator <<(std::ostream& s, Vec2<T>& v);
 };
 
 template <typename T>
 struct Vec3 {
     union {
-        struct { T x, y, z; };
-        struct { T ivert, iuv, inorm; };
+        struct { T x, y, z; };  // vertex coordinates
+        struct { T ivert, iuv, inorm; };  // 索引，用于表示flat
         T raw[3];
     };
 
@@ -44,6 +50,12 @@ struct Vec3 {
 	inline Vec3<T> operator -(const Vec3<T> &v) const { return Vec3<T>(x-v.x, y-v.y, z-v.z); }
 	inline Vec3<T> operator *(float f)          const { return Vec3<T>(x*f, y*f, z*f); }
 	inline T       operator *(const Vec3<T> &v) const { return x*v.x + y*v.y + z*v.z; }
+    inline T       operator [](const size_t i) const {
+        assert(i == 0 || i == 1 || i == 2);
+        if (i == 0) return this->x;
+        else if (i == 1) return this->y;
+        else return this->z;
+    }
 
     float norm() const { 
         return std::sqrt(x*x + y*y + z*z); 
@@ -52,7 +64,7 @@ struct Vec3 {
         (*this) = (*this) * (l / norm());
         return *this;
     }
-
+    
     template <class >
     friend std::ostream& operator<<(std::ostream& out, Vec3<T>& v);
 };
@@ -72,3 +84,4 @@ template <class T> std::ostream& operator<<(std::ostream& s, Vec3<T>& v) {
 	s << "(" << v.x << ", " << v.y << ", " << v.z << ")\n";
 	return s;
 }
+

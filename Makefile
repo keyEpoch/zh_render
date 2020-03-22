@@ -2,7 +2,7 @@ SYSCONF_LINK = g++
 CCFLAGS      =
 LDFLAGS      =
 LIBS         = -lm
-DEBUG        = -g 
+DEBUG        =  
 
 DESTDIR = ./
 TARGET  = main
