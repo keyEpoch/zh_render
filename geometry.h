@@ -85,12 +85,15 @@ struct vec<3, T> {
         return std::sqrt(x*x + y*y + z*z);
     }
 
-    vec<3, T> normalize() {
+    vec<3, T> normalize(T l = 1) {
+        // *this = (*this) * (l / this->norm());
+        // return *this;
         float n = this->norm();
         vec<3, T> ret;
-        ret[0] = this->x / n;
-        ret[1] = this->y / n;
-        ret[2] = this->z / n;
+        ret[0] = this->x * (l / n);
+        ret[1] = this->y * (l / n);
+        ret[2] = this->z * (l / n);
+        // std::cout << ret[0] << " " << ret[1] << " " << ret[2] << std::endl;
         return ret;
     }
 

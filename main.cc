@@ -35,22 +35,19 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color) {
     }
 }
 
-Vec3f cross_product(Vec3f v1, Vec3f v2) {
-    return Vec3f(v1.y * v2.z - v1.z * v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
-}
 
-Vec3f bary_centric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
+
+Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3i P) {
     Vec3f s[2];
-    for (int i = 2; i--; ) {
-        s[i].x = C[i] - A[i];
-        s[i].y = B[i] - A[i];
-        s[i].z = A[i] - P[i];
+    for (int i=2; i--; ) {
+        s[i][0] = C[i]-A[i];
+        s[i][1] = B[i]-A[i];
+        s[i][2] = A[i]-P[i];
     }
     Vec3f u = cross_product(s[0], s[1]);
-    
-    if (std::abs(u[2]) > 1e-2) // 需要数学知识了
-        return Vec3f(1.f - (u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
-    return Vec3f(-1, 1, 1);
+    if (std::abs(u[2])>1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
+        return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
+    return Vec3f(-1,1,1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
 }
 
 /*
@@ -82,6 +79,11 @@ void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
     Vec2f clamp(image.get_width()-1, image.get_height()-1);
     
+    mat<3, 2, float> pts2;
+    for (int i = 0; i < 3; ++i) 
+        pts2.set_row(i, pts[i]);
+
+    
     // pts coords are screen coords
     for (int i = 0; i < 3; i++) {
 
@@ -98,10 +100,10 @@ void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
     } // get the minimum region, for I need to judge if the points 
       // in the region is contained by the triangle
      
-    Vec3f P;  // P is supposed to be inside triangle
+    Vec3i P;  // P is supposed to be inside triangle
     for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++) {
         for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++) {
-            Vec3f bc_screen = bary_centric(pts[0], pts[1], pts[2], P);
+            Vec3f bc_screen  = bary_centric(pts2[0], pts2[1], pts2[2], P);
             // judge if triangle contains P 
             if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0) 
                 continue;
@@ -121,6 +123,10 @@ Vec3f world2screen(Vec3f v) {
     return Vec3f( (v.x+1)*width/2, (v.y+1)*height/2, v.z );
 }
 
+float dot_product(Vec3f va, Vec3f vb) {
+    return va.x * vb.x + va.y * vb.y + va.z * vb.z;
+}
+
 int main(int argc, char** argv) {
     if (2==argc) {
         model = new Model(argv[1]);
@@ -138,12 +144,22 @@ int main(int argc, char** argv) {
     Vec3f light_dir(0, 0, -1);
     for (int i=0; i<model->nfaces(); i++) {
         std::vector<int> face = model->face(i);
+
+        Vec3f world_v[3];
+        for (int i = 3; i--; world_v[i] = model->vert(face[i]));
+
         Vec3f pts[3];  // point to screen
         for (int i = 0; i < 3; ++i)
-            pts[i] = world2screen(model->vert(face[i]));
+            pts[i] = world2screen(model->vert(face[i]));   // 保留z坐标
         
-        // draw triangle
-        triangle_2(pts, zbuffer, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
+        Vec3f n = cross_product((world_v[2] - world_v[0]), (world_v[1] - world_v[0]));
+        n = n.normalize();
+        // std::cout << n << std::endl;
+        float intensity = dot_product(n, light_dir);    
+        if (intensity > 0) 
+            // draw triangle
+            triangle_2(pts, zbuffer, image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
+            // triangle_2(pts, zbuffer, image, TGAColor(rand()*255, rand()*255, rand()*255, 255));
     }
         // Vec2i screen_coords[3];
         // Vec3f world_coords[3];
