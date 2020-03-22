@@ -53,8 +53,9 @@ Vec3f bary_centric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
     return Vec3f(-1, 1, 1);
 }
 
+/*
 // fill by drawing the line segments in triangle
-void triangle_1(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
+void triangle_1(Vec2f t0, Vec2f t1, Vec2f t2, TGAImage &image, TGAColor color) {
     if (t0.y==t1.y && t0.y==t2.y) return; // i dont care about degenerate triangles
     if (t0.y>t1.y) std::swap(t0, t1);
     if (t0.y>t2.y) std::swap(t0, t2);
@@ -74,6 +75,7 @@ void triangle_1(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
         }
     }
 }
+*/
 
 void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
