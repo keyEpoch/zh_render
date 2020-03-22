@@ -44,6 +44,11 @@ struct vec<2, T> {
         return (i == 0) ? x : y;
     }
 
+    const T& operator[](const size_t i) const {
+        assert(i < 2);
+        return (i == 0) ? x : y;
+    }
+
     T x, y;
 };
 
@@ -68,8 +73,25 @@ struct vec<3, T> {
         return (i == 0) ? x : ((i == 1) ? y : z);
     }
 
+    const T& operator[](size_t i) const {
+        assert(i < 3);
+        // if (i == 0) return x;
+        // else if (i == 1) return y;
+        // else return z;
+        return (i == 0) ? x : ((i == 1) ? y : z);
+    }
+
     float norm() {
-        return std::sqrt(x*x, y*y, z*z);
+        return std::sqrt(x*x + y*y + z*z);
+    }
+
+    vec<3, T> normalize() {
+        float n = this->norm();
+        vec<3, T> ret;
+        ret[0] = this->x / n;
+        ret[1] = this->y / n;
+        ret[2] = this->z / n;
+        return ret;
     }
 
     T x, y, z;
@@ -85,6 +107,12 @@ T operator*(const vec<DIM, T>& va, const vec<DIM, T>& vb) {
 }
 
 template <size_t DIM, typename T>
+vec<DIM, T> operator*(vec<DIM, T> va, const vec<DIM, T>& vb) {
+    for (size_t i = DIM; i--; va[i] *= vb[i]);
+    return va;
+}
+
+template <size_t DIM, typename T>
 vec<DIM, T> operator+(vec<DIM, T> va, const vec<DIM, T>& vb) {
     for (size_t i = DIM; i--; va[i] += vb[i]);
     return va;
@@ -92,13 +120,7 @@ vec<DIM, T> operator+(vec<DIM, T> va, const vec<DIM, T>& vb) {
 
 template <size_t DIM, typename T> 
 vec<DIM, T> operator-(vec<DIM, T> va, const vec<DIM, T>& vb) {
-    for (size_t i = DIM; i--; va[i] -= vb[i]);
-    return va;
-}
-
-template <size_t DIM, typename T>
-vec<DIM, T> operator*(vec<DIM, T> va, const vec<DIM, T>& vb) {
-    for (size_t i = DIM; i--; va[i] *= vb[i]);
+    for (size_t i = DIM; i--; va[i] = vb[i] - va[i]);
     return va;
 }
 
@@ -167,6 +189,11 @@ public:
         assert(idx < DimRows);
         return rows[idx];
     }
+    const vec<DimCols, T>& operator[](const size_t idx) const {
+        assert(idx < DimRows);
+        return rows[idx];
+    }
+
 
     vec<DimRows, T> col(const size_t idx) const {
         assert(idx < DimCols);
@@ -178,6 +205,13 @@ public:
     void set_col(size_t idx, vec<DimRows, T> v) {
         assert(idx < DimRows);
         for (size_t i = DimRows; i--; rows[i][idx] = v[i]);
+    }
+
+    void set_row(size_t idx, vec<DimRows, T> v) {
+        assert(idx < DimRows);
+        // vec<DimRows, T> tmp = proj<DimCols>(v);
+        // for (size_t i = DimCols; i--; rows[idx][i] = tmp[i]);
+        for (size_t i = DimCols; i--; rows[idx][i] = v[i]);
     }
 
     static mat<DimRows, DimCols, T> identity() {
@@ -227,7 +261,7 @@ public:
         return ret;
     }
 private:
-    vec<DimRows, T> rows[DimCols];
+    vec<DimCols, T> rows[DimRows];
 };
 
 
