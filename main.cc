@@ -151,37 +151,27 @@ int main(int argc, char** argv) {
         Vec3f world_v[3];
         for (int i = 3; i--; world_v[i] = model->vert(face[i]));
 
+        // 注意：.obj文件中的坐标是在[-1, 1]上 normalize 过了的
+        // 这时候要把其转换为以左下角为原点的屏幕坐标系
+        // 世界坐标系按照z轴向指向屏幕外
         Vec3f pts[3];  // point to screen
         for (int i = 0; i < 3; ++i)
             pts[i] = world2screen(model->vert(face[i]));   // 保留z坐标
         
+        
         Vec3f n = cross_product((world_v[2] - world_v[0]), (world_v[1] - world_v[0]));
         n = n.normalize();
-        // std::cout << n << std::endl;
+        
         float intensity = dot_product(n, light_dir);    
         if (intensity > 0) 
             // draw triangle
             triangle_2(pts, zbuffer, image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
             // triangle_2(pts, zbuffer, image, TGAColor(rand()*255, rand()*255, rand()*255, 255));
+        
+        // triangle_2(pts, zbuffer, image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
+
     }
-        // Vec2i screen_coords[3];
-        // Vec3f world_coords[3];
-        // for (int j=0; j<3; j++) {
-            // Vec3f v = model->vert(face[j]);
-            // 注意：.obj文件中的坐标是在[-1, 1]上 normalize 过了的
-            // 这时候要把其转换为以左下角为原点的屏幕坐标系
-            // 世界坐标系按照z轴向指向屏幕外
-            // screen_coords[j] = Vec2i((v.x+1.)*width/2., (v.y+1.)*height/2.);
-            // world_coords[j]  = v;
-        // }
-        // in geometry.h, overload operator ^, it means cross product 
-        // Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
-        // n.normalize();
-        // float intensity = n*light_dir;
-        // if (intensity>0) {
-        //     triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
-        // }
-    
+        
 
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
     image.write_tga_file("output.tga");

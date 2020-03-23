@@ -41,9 +41,9 @@ Model::Model(const char *filename)
         }
     }
     std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << std::endl;
-    load_texture("head_spec.tga", specularmap_);
-    load_texture("head_nm.tga", normalmap_);
-    load_texture("head_diffuse.tga", diffusemap_);
+    load_texture("./obj/head_spec.tga", specularmap_);
+    load_texture("./obj/head_nm.tga", normalmap_);
+    load_texture("./obj/head_diffuse.tga", diffusemap_);
 }
 
 Model::~Model() {
