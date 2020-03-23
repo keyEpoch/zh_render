@@ -45,7 +45,7 @@ Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3i P) {
         s[i][2] = A[i]-P[i];
     }
     Vec3f u = cross_product(s[0], s[1]);
-    if (std::abs(u[2])>1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
+    if (std::abs(u[2])>1e-4)    // u[2] 一定不能为 0
         return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
     return Vec3f(-1,1,1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
 }
@@ -74,6 +74,7 @@ void triangle_1(Vec2f t0, Vec2f t1, Vec2f t2, TGAImage &image, TGAColor color) {
 }
 */
 
+// this method to fill color in triangle can run parallel, so can us gpu for multi-threads
 void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -109,9 +110,11 @@ void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
                 continue;
             P.z = 0;
             for (int i=0; i<3; i++) 
-                P.z += pts[i][2]*bc_screen[i];   // 这里没懂
+                // 这个是根据三角形的坐标和重心的位置，来总的决定这个三角形的z轴高度
+                // 从而决定哪些三角形是可以画的，哪些是不需要画的（因为P.z不够，说明在后面，Z轴是向屏幕外的）
+                P.z += pts[i][2]*bc_screen[i];   
 
-            if (zbuffer[int(P.x+P.y*width)]<P.z) {
+            if (zbuffer[int(P.x+P.y*width)] < P.z) {
                 zbuffer[int(P.x+P.y*width)] = P.z;
                 image.set(P.x, P.y, color);
             }
