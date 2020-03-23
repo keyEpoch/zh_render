@@ -146,6 +146,8 @@ int main(int argc, char** argv) {
     TGAImage image(width, height, TGAImage::RGB);
     Vec3f light_dir(0, 0, -1);
     for (int i=0; i<model->nfaces(); i++) {
+        
+        TGAColor t_color = model->face_one_color(i);
         std::vector<int> face = model->face(i);
 
         Vec3f world_v[3];
@@ -158,7 +160,7 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 3; ++i)
             pts[i] = world2screen(model->vert(face[i]));   // 保留z坐标
         
-        
+        /*
         Vec3f n = cross_product((world_v[2] - world_v[0]), (world_v[1] - world_v[0]));
         n = n.normalize();
         
@@ -167,8 +169,10 @@ int main(int argc, char** argv) {
             // draw triangle
             triangle_2(pts, zbuffer, image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
             // triangle_2(pts, zbuffer, image, TGAColor(rand()*255, rand()*255, rand()*255, 255));
+        */
+        triangle_2(pts, zbuffer, image, t_color);
+
         
-        // triangle_2(pts, zbuffer, image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
 
     }
         

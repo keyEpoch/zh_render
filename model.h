@@ -25,11 +25,13 @@ public:
 
     Vec2i uv(int iface, int nthvert);   // return cordinates in real image
 
-	std::vector<int> face(int idx);
+	std::vector<int> face(int idx);     // return to the three vertices indexs
 
     Vec3f normal(Vec2i uv);
     Vec3f normal(int iface, int nthvert);
 
     TGAColor diffuse(Vec2i uv);
     float specular(Vec2i uv);
+
+    TGAColor face_one_color(int iface);
 };

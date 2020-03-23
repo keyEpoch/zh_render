@@ -96,6 +96,12 @@ Vec3f Model::normal(int iface, int nthvert) {
     return norms_[idx].normalize();
 }
 
+TGAColor Model::face_one_color(int iface) {
+    TGAColor c;
+    c = diffusemap_.get(this->uv(iface, 0)[0], this->uv(iface, 0)[1]);
+    return c;
+}
+
 void Model::load_texture(std::string filename, TGAImage& image) {
     bool read_tga_state = image.read_tga_file(filename.c_str());
     if (read_tga_state) std::cerr << "load texture file ok!" << std::endl;
