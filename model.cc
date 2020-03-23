@@ -4,7 +4,8 @@
 #include <sstream>
 #include "model.h"
 
-Model::Model(const char *filename) : verts_(), faces_() {
+Model::Model(const char *filename) 
+: verts_(), uv_(), norms_(), faces_(), diffusemap_(), normalmap_(), specularmap_() {
     std::ifstream in;
     in.open (filename, std::ifstream::in);
     if (in.fail()) return;
@@ -18,18 +19,31 @@ Model::Model(const char *filename) : verts_(), faces_() {
             Vec3f v;
             for (int i=0;i<3;i++) iss >> v[i];
             verts_.push_back(v);
+        } else if (!line.compare(0, 3, "vt ")) {
+            iss >> trash >> trash;
+            Vec2f uv;
+            for (int i = 0; i < 2; ++i) iss >> uv[i];
+            uv_.push_back(uv);
+        } else if (!line.compare(0, 3, "vn ")) {
+            iss >> trash >> trash;
+            Vec3f n;
+            for (int i = 0; i < 3; ++i) iss >> n[i];
+            norms_.push_back(n);
         } else if (!line.compare(0, 2, "f ")) {
-            std::vector<int> f;
-            int itrash, idx;
+            std::vector<Vec3i> f;
+            Vec3i vtn;
             iss >> trash;
-            while (iss >> idx >> trash >> itrash >> trash >> itrash) {
-                idx--; // in wavefront obj all indices start at 1, not zero
-                f.push_back(idx);
+            while (iss >> vtn[0] >> trash >> vtn[1] >> trash >> vtn[2]) {
+                for (int i = 0; i < 3; i++) vtn[i]--; // in wavefront obj all indices start at 1, not zero
+                f.push_back(vtn);
             }
             faces_.push_back(f);
         }
     }
     std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << std::endl;
+    load_texture("head_spec.tga", specularmap_);
+    load_texture("head_nm.tga", normalmap_);
+    load_texture("head_diffuse.tga", diffusemap_);
 }
 
 Model::~Model() {
@@ -44,9 +58,46 @@ int Model::nfaces() {
 }
 
 std::vector<int> Model::face(int idx) {
-    return faces_[idx];
+    std::vector<int> face;
+    for (int i = 0; i < faces_[idx].size(); i++) 
+        face.push_back(faces_[idx][i][0]);
+    return face;
 }
 
 Vec3f Model::vert(int i) {
     return verts_[i];
+}
+
+Vec2i Model::uv(int iface, int nthvert) {
+    int vt_idx = faces_[iface][nthvert][1];
+    auto vt_x = uv_[vt_idx][0] * diffusemap_.get_width();
+    auto vt_y = uv_[vt_idx][1] * diffusemap_.get_height();
+    return Vec2i(vt_x, vt_y);  // constructor can convert float to int 
+}
+
+TGAColor Model::diffuse(Vec2i uv) {
+    return diffusemap_.get(uv[0], uv[1]);
+}
+
+float Model::specular(Vec2i uv) {
+    return specularmap_.get(uv[0], uv[1])[0]/1.f;
+}
+
+Vec3f Model::normal(Vec2i uv) {
+    TGAColor c = normalmap_.get(uv[0], uv[1]);
+    Vec3f res;
+    for (int i = 0; i < 3; ++i) 
+        res[2-i] = (float)(c[i]) / 255.f * 2.f - 1.f;
+    return res;
+}
+
+Vec3f Model::normal(int iface, int nthvert) {
+    int idx = faces_[iface][nthvert][2];
+    return norms_[idx].normalize();
+}
+
+void Model::load_texture(std::string filename, TGAImage& image) {
+    bool read_tga_state = image.read_tga_file(filename.c_str());
+    if (read_tga_state) std::cerr << "load texture file ok!" << std::endl;
+    else std::cerr << "load texture file failed!" << std::endl;
 }
