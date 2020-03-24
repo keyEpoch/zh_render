@@ -7,7 +7,7 @@
 
 
 template <size_t DimCols, size_t DimRows, typename T>
-class mat;
+struct mat;
 
 /* Vector */ 
 template <size_t DIM, typename T>
@@ -109,11 +109,11 @@ T operator*(const vec<DIM, T>& va, const vec<DIM, T>& vb) {
     return ret;
 }
 
-template <size_t DIM, typename T>
-vec<DIM, T> operator*(vec<DIM, T> va, const vec<DIM, T>& vb) {
-    for (size_t i = DIM; i--; va[i] *= vb[i]);
-    return va;
-}
+// template <size_t DIM, typename T>
+// vec<DIM, T> operator*(vec<DIM, T> va, const vec<DIM, T>& vb) {
+//     for (size_t i = DIM; i--; va[i] *= vb[i]);
+//     return va;
+// }
 
 template <size_t DIM, typename T>
 vec<DIM, T> operator+(vec<DIM, T> va, const vec<DIM, T>& vb) {
@@ -184,7 +184,7 @@ struct dt<1,T> {
 
 /* matrix */
 template <size_t DimRows, size_t DimCols, typename T>
-class mat {
+struct mat {
     
 public:
     mat() {}
@@ -206,7 +206,7 @@ public:
     }
 
     void set_col(size_t idx, vec<DimRows, T> v) {
-        assert(idx < DimRows);
+        assert(idx < DimCols);
         for (size_t i = DimRows; i--; rows[i][idx] = v[i]);
     }
 
@@ -263,7 +263,7 @@ public:
         for (size_t i=DimCols; i--; ret[i]=this->col(i));
         return ret;
     }
-private:
+
     vec<DimCols, T> rows[DimRows];
 };
 
@@ -272,20 +272,22 @@ private:
 
 /* override ops */
 template<size_t DimRows,size_t DimCols,typename T> 
-vec<DimRows,T> operator*(const mat<DimRows,DimCols,T>& lhs, const vec<DimCols,T>& rhs) {
-    vec<DimRows,T> ret;
-    for (size_t i=DimRows; i--; ret[i]=lhs[i]*rhs);
+vec<DimRows, T> operator*(const mat<DimRows, DimCols, T>& lhs, const vec<DimCols, T>& rhs) {
+    vec<DimRows, T> ret;
+    for (size_t i = DimRows; i--; ret[i] = lhs[i] * rhs);
     return ret;
 }
 
-template<size_t R1,size_t C1,size_t C2,typename T>mat<R1,C2,T> operator*(const mat<R1,C1,T>& lhs, const mat<C1,C2,T>& rhs) {
+template<size_t R1,size_t C1,size_t C2,typename T>
+mat<R1,C2,T> operator*(const mat<R1,C1,T>& lhs, const mat<C1,C2,T>& rhs) {
     mat<R1,C2,T> result;
     for (size_t i=R1; i--; )
         for (size_t j=C2; j--; result[i][j]=lhs[i]*rhs.col(j));
     return result;
 }
 
-template<size_t DimRows,size_t DimCols,typename T>mat<DimCols,DimRows,T> operator/(mat<DimRows,DimCols,T> lhs, const T& rhs) {
+template<size_t DimRows,size_t DimCols,typename T>
+mat<DimCols,DimRows,T> operator/(mat<DimRows,DimCols,T> lhs, const T& rhs) {
     for (size_t i=DimRows; i--; lhs[i]=lhs[i]/rhs);
     return lhs;
 }

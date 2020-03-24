@@ -4,14 +4,13 @@
 #include <limits>
 #include "tgaimage.h"
 #include "model.h"
-// #include "geometry.h"
+#include "shader.h"
 
 const TGAColor white = TGAColor(255, 255, 255, 255);
 const TGAColor red   = TGAColor(255, 0,   0,   255);
 const TGAColor green = TGAColor(0,   255, 0,   255);
-Model *model = NULL;
-const int width  = 800;
-const int height = 800;
+
+Model* model;
 
 void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color) {
     bool steep = false;
@@ -33,21 +32,6 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color) {
             image.set(x, y, color);
         }
     }
-}
-
-
-
-Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3i P) {
-    Vec3f s[2];
-    for (int i=2; i--; ) {
-        s[i][0] = C[i]-A[i];
-        s[i][1] = B[i]-A[i];
-        s[i][2] = A[i]-P[i];
-    }
-    Vec3f u = cross_product(s[0], s[1]);
-    if (std::abs(u[2])>1e-4)    // u[2] 一定不能为 0
-        return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
-    return Vec3f(-1,1,1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
 }
 
 /*
@@ -74,6 +58,7 @@ void triangle_1(Vec2f t0, Vec2f t1, Vec2f t2, TGAImage &image, TGAColor color) {
 }
 */
 
+/*
 // this method to fill color in triangle can run parallel, so can us gpu for multi-threads
 void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
@@ -104,14 +89,15 @@ void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
     Vec3i P;  // P is supposed to be inside triangle
     for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++) {
         for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++) {
-            Vec3f bc_screen  = bary_centric(pts2[0], pts2[1], pts2[2], P);
+            Vec3f bc_screen  = bary_centric(pts2[0], pts2[1], pts2[2], P);   // bary_centric 就是用来判断某点是不是在三角形内
             // judge if triangle contains P 
             if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0) 
                 continue;
             P.z = 0;
             for (int i=0; i<3; i++) 
-                // 这个是根据三角形的坐标和重心的位置，来总的决定这个三角形的z轴高度
-                // 从而决定哪些三角形是可以画的，哪些是不需要画的（因为P.z不够，说明在后面，Z轴是向屏幕外的）
+                // P.z得到的就是 P 的z坐标
+                // 因为bary_centric得到的就是 (1-u-v, u, v)
+                // P = (1 - u - v) * A + u * B + v * C
                 P.z += pts[i][2]*bc_screen[i];   
 
             if (zbuffer[int(P.x+P.y*width)] < P.z) {
@@ -121,6 +107,31 @@ void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
         }
     }
 }
+*/
+
+class OnlyTexShader : public BaseShader {
+
+public:
+    mat<2, 3, float> triangle_uvs; 
+
+    virtual Vec4f vertex(int iface, int nthvert) {
+        triangle_uvs.set_col(nthvert, model->uv(iface, nthvert));
+    
+        mat<1, 4, float> trash;
+        return trash[0];
+    }
+
+    virtual bool fragment(Vec3f bary, TGAColor& c) {
+        // 2x3 3x1 
+        Vec2f uv = triangle_uvs * bary;  // override * between mat and vec
+        // between mat and vec will cause fucking ambiguous fault
+        // Vec2f uv;
+        // uv[0] = triangle_uvs[0] * bary;
+        uv[1] = 1.f - uv[1];
+        c = model->diffuse(uv);
+        return false;
+    }
+};
 
 Vec3f world2screen(Vec3f v) {
     return Vec3f( (v.x+1)*width/2, (v.y+1)*height/2, v.z );
@@ -137,6 +148,8 @@ int main(int argc, char** argv) {
         model = new Model("obj/head.obj");
     }
 
+    OnlyTexShader texshader;
+
     // to storage the orfer
     float* zbuffer = new float[width * height];
     for (int i = 0; i < width * height; ++i) {
@@ -146,13 +159,13 @@ int main(int argc, char** argv) {
     TGAImage image(width, height, TGAImage::RGB);
     Vec3f light_dir(0, 0, -1);
     for (int i=0; i<model->nfaces(); i++) {
-        
-        TGAColor t_color = model->face_one_color(i);
+    
         std::vector<int> face = model->face(i);
 
         Vec3f world_v[3];
         for (int i = 3; i--; world_v[i] = model->vert(face[i]));
-
+        
+        for (int j = 0; j < 3; ++j) texshader.vertex(i, j);
         // 注意：.obj文件中的坐标是在[-1, 1]上 normalize 过了的
         // 这时候要把其转换为以左下角为原点的屏幕坐标系
         // 世界坐标系按照z轴向指向屏幕外
@@ -160,6 +173,7 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 3; ++i)
             pts[i] = world2screen(model->vert(face[i]));   // 保留z坐标
         
+        triangle(pts, texshader, image, zbuffer);
         /*
         Vec3f n = cross_product((world_v[2] - world_v[0]), (world_v[1] - world_v[0]));
         n = n.normalize();
@@ -167,13 +181,8 @@ int main(int argc, char** argv) {
         float intensity = dot_product(n, light_dir);    
         if (intensity > 0) 
             // draw triangle
-            triangle_2(pts, zbuffer, image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
-            // triangle_2(pts, zbuffer, image, TGAColor(rand()*255, rand()*255, rand()*255, 255));
+            triangle(pts, texshader, image, zbuffer);
         */
-        triangle_2(pts, zbuffer, image, t_color);
-
-        
-
     }
         
 

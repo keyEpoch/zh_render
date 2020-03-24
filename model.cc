@@ -68,14 +68,12 @@ Vec3f Model::vert(int i) {
     return verts_[i];
 }
 
-Vec2i Model::uv(int iface, int nthvert) {
-    int vt_idx = faces_[iface][nthvert][1];
-    auto vt_x = uv_[vt_idx][0] * diffusemap_.get_width();
-    auto vt_y = uv_[vt_idx][1] * diffusemap_.get_height();
-    return Vec2i(vt_x, vt_y);  // constructor can convert float to int 
+Vec2f Model::uv(int iface, int nthvert) {
+    return uv_[faces_[iface][nthvert][1]];
 }
 
-TGAColor Model::diffuse(Vec2i uv) {
+TGAColor Model::diffuse(Vec2f uvf) {
+    Vec2i uv(uvf[0]*diffusemap_.get_width(), uvf[1]*diffusemap_.get_height());
     return diffusemap_.get(uv[0], uv[1]);
 }
 

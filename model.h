@@ -23,14 +23,14 @@ public:
 	Vec3f vert(int i);
     Vec3f vert(int iface, int nthvert);
 
-    Vec2i uv(int iface, int nthvert);   // return cordinates in real image
+    Vec2f uv(int iface, int nthvert);   // return cordinates in real image
 
 	std::vector<int> face(int idx);     // return to the three vertices indexs
 
     Vec3f normal(Vec2i uv);
     Vec3f normal(int iface, int nthvert);
 
-    TGAColor diffuse(Vec2i uv);
+    TGAColor diffuse(Vec2f uv);
     float specular(Vec2i uv);
 
     TGAColor face_one_color(int iface);
