@@ -109,29 +109,7 @@ void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
 }
 */
 
-class OnlyTexShader : public BaseShader {
 
-public:
-    mat<2, 3, float> triangle_uvs; 
-
-    virtual Vec4f vertex(int iface, int nthvert) {
-        triangle_uvs.set_col(nthvert, model->uv(iface, nthvert));
-    
-        mat<1, 4, float> trash;
-        return trash[0];
-    }
-
-    virtual bool fragment(Vec3f bary, TGAColor& c) {
-        // 2x3 3x1 
-        Vec2f uv = triangle_uvs * bary;  // override * between mat and vec
-        // between mat and vec will cause fucking ambiguous fault
-        // Vec2f uv;
-        // uv[0] = triangle_uvs[0] * bary;
-        uv[1] = 1.f - uv[1];
-        c = model->diffuse(uv);
-        return false;
-    }
-};
 
 Vec3f world2screen(Vec3f v) {
     return Vec3f( (v.x+1)*width/2, (v.y+1)*height/2, v.z );
@@ -165,7 +143,7 @@ int main(int argc, char** argv) {
         Vec3f world_v[3];
         for (int i = 3; i--; world_v[i] = model->vert(face[i]));
         
-        for (int j = 0; j < 3; ++j) texshader.vertex(i, j);
+        for (int j = 0; j < 3; ++j) texshader.vertex(i, j, model);
         // 注意：.obj文件中的坐标是在[-1, 1]上 normalize 过了的
         // 这时候要把其转换为以左下角为原点的屏幕坐标系
         // 世界坐标系按照z轴向指向屏幕外
@@ -173,7 +151,7 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 3; ++i)
             pts[i] = world2screen(model->vert(face[i]));   // 保留z坐标
         
-        triangle(pts, texshader, image, zbuffer);
+        triangle(pts, texshader, image, zbuffer, model);
         /*
         Vec3f n = cross_product((world_v[2] - world_v[0]), (world_v[1] - world_v[0]));
         n = n.normalize();

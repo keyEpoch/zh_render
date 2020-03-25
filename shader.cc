@@ -5,9 +5,27 @@
 
 BaseShader::~BaseShader() {}
 
+Vec4f OnlyTexShader::vertex(int iface, int nthvert, Model* model) {
+    triangle_uvs.set_col(nthvert, model->uv(iface, nthvert));
+
+    mat<1, 4, float> trash;
+    return trash[0];
+}
+    
+bool OnlyTexShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
+    // 2x3 3x1 
+    Vec2f uv = triangle_uvs * bary;  // override * between mat and vec
+    // between mat and vec will cause fucking ambiguous fault
+    // Vec2f uv;
+    // uv[0] = triangle_uvs[0] * bary;
+    uv[1] = 1.f - uv[1];
+    c = model->diffuse(uv);
+    return false;
+}
+
 
 // this method to fill color in triangle can run parallel, so can us gpu for multi-threads
-void triangle(Vec3f* pts, BaseShader& shader, TGAImage& image, float* zbuffer) {
+void triangle(Vec3f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
     Vec2f clamp(image.get_width()-1, image.get_height()-1);
@@ -43,7 +61,7 @@ void triangle(Vec3f* pts, BaseShader& shader, TGAImage& image, float* zbuffer) {
                 continue;
             
             P.z = 0;
-            shader.fragment(bary, color);
+            shader.fragment(bary, color, model);
             for (int i=0; i<3; i++) 
                 // P.z得到的就是 P 的z坐标
                 // 因为bary_centric得到的就是 (1-u-v, u, v)
