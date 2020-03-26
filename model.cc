@@ -102,6 +102,9 @@ TGAColor Model::face_one_color(int iface) {
 
 void Model::load_texture(std::string filename, TGAImage& image) {
     bool read_tga_state = image.read_tga_file(filename.c_str());
-    if (read_tga_state) std::cerr << "load texture file ok!" << std::endl;
+    if (read_tga_state) {
+        std::cerr << "load texture file ok!" << std::endl;
+        image.flip_vertically();
+    }
     else std::cerr << "load texture file failed!" << std::endl;
 }

@@ -18,7 +18,7 @@ bool OnlyTexShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
     // between mat and vec will cause fucking ambiguous fault
     // Vec2f uv;
     // uv[0] = triangle_uvs[0] * bary;
-    uv[1] = 1.f - uv[1];
+    // uv[1] = 1.f - uv[1];
     c = model->diffuse(uv);
     return false;
 }
@@ -52,7 +52,7 @@ void triangle(Vec3f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, M
       // in the region is contained by the triangle
      
     TGAColor color;
-    Vec3i P;  // P is supposed to be inside triangle
+    Vec3f P;  // P is supposed to be inside triangle
     for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++) {
         for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++) {
             Vec3f bary = bary_centric(pts2[0], pts2[1], pts2[2], P);   // bary_centric 就是用来判断某点是不是在三角形内
@@ -77,7 +77,7 @@ void triangle(Vec3f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, M
     }
 }
 
-Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3i P) {
+Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3f P) {
     Vec3f s[2];
     Vec3f ret;
     for (int i=2; i--; ) {

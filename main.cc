@@ -112,7 +112,7 @@ void triangle_2(Vec3f* pts, float* zbuffer, TGAImage& image, TGAColor color) {
 
 
 Vec3f world2screen(Vec3f v) {
-    return Vec3f( (v.x+1)*width/2, (v.y+1)*height/2, v.z );
+    return Vec3f(int((v.x+1.)*width/2.+.5), int((v.y+1.)*height/2.+.5), v.z);
 }
 
 float dot_product(Vec3f va, Vec3f vb) {

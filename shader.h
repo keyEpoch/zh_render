@@ -29,4 +29,4 @@ public:
 
 void triangle(Vec3f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model);
 
-Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3i P);
+Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3f P);
