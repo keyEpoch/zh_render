@@ -95,3 +95,36 @@ Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3f P) {
     return Vec3f(-1,1,1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
 }
 
+/* three important matrix */
+// transfer eye(change the O point)
+void lookat(Vec3f eye, Vec3f center, Vec3f up) {
+    Vec3f z = (eye-center).normalize();
+    Vec3f x = cross_product(up,z).normalize();
+    Vec3f y = cross_product(z,x).normalize();
+    Matrix Minv = Matrix::identity();
+    Matrix Tr   = Matrix::identity();
+    for (int i=0; i<3; i++) {
+        Minv[0][i] = x[i];
+        Minv[1][i] = y[i];
+        Minv[2][i] = z[i];
+        Tr[i][3] = -center[i];
+    }
+    ModelView = Minv*Tr;
+}
+
+// after lookat(), the camera is always on z-axis
+void projection(float coeff = 0.f) {   // coeff = -1/c
+    Projection = Matrix::identity();
+    Projection[3][2] = coeff;
+}   
+
+// transfer to [(x, y), (x+w, y+h)] from [(-1, -1), (1, 1)]
+void viewport(int x, int y, int w, int h) {
+    Viewport = Matrix::identity();
+    Viewport[0][3] = x+w/2.f;
+    Viewport[1][3] = y+h/2.f;
+    Viewport[2][3] = 1.f;
+    Viewport[0][0] = w/2.f;
+    Viewport[1][1] = h/2.f;
+    Viewport[2][2] = 0;
+}
