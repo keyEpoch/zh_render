@@ -22,6 +22,11 @@ struct vec {
         return data_[i];
     }
 
+    const T& operator[](const size_t i) const {
+        assert(i < DIM);
+        return data_[i];
+    }
+
 private:
     T data_[DIM];
 };
