@@ -56,6 +56,11 @@ int main(int argc, char** argv) {
     float* zbuffer = new float[width*height];
     TGAImage frame(width, height, TGAImage::RGB);
 
+    lookat(eye, center, up);
+    viewport(width/8, height/8, width*3/4, height*3/4);
+    projection(-1.f/(eye-center).norm());
+    light_dir = proj<3>((Projection*ModelView*embed<4>(light_dir, 0.f))).normalize();
+
     for (int i = 0; i < model->nfaces(); ++i) {
         for (int j = 0; j < 3; ++j) 
             comshader.vertex(i, j, model);
