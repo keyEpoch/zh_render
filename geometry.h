@@ -141,7 +141,7 @@ vec<DIM, T> operator/(vec<DIM, T> va, const vec<DIM, T>& vb) {
 template<size_t DIM, typename T>
 vec<DIM, T> operator/(vec<DIM, T> v, T division) {
     vec<DIM, T> ret;
-    for (int i = DIM; i--; ret[i] /= division);
+    for (int i = DIM; i--; ret[i] = v[i] / division);
     return ret;
 }
 
@@ -156,7 +156,7 @@ vec<LEN, T> embed(const vec<DIM,T>& v, T fill = 1) {
 template <size_t LEN, size_t DIM, typename T>
 vec<LEN, T> proj(const vec<DIM, T>& v) {
     vec<LEN, T> ret;
-    for (size_t i = LEN; i--; ret[i] = v[i])
+    for (size_t i = LEN; i--; ret[i] = v[i]);    // !!! Attention: must add ; at the end
     return ret;
 }
 
