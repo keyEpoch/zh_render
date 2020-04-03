@@ -3,6 +3,15 @@
 #include "shader.h"
 
 
+Vec3f light_dir(1, 1, 1);
+Vec3f eye(1, 1, 3);
+Vec3f center(0, 0, 1);
+Vec3f up(0, 1, 0);
+
+Matrix ModelView;
+Matrix Viewport;
+Matrix Projection;
+
 BaseShader::~BaseShader() {}
 
 Vec4f OnlyTexShader::vertex(int iface, int nthvert, Model* model) {
@@ -24,21 +33,21 @@ bool OnlyTexShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
 }
 
 Vec4f CommonShader::vertex(int iface, int nthvert, Model* model) {
-        varying_uv.set_col(nthvert, model->uv(iface, nthvert));
-        
-        Vec4f nm_embeding = embed<4, 3, float>(model->normal(iface, nthvert), 0.f);
-        Vec3f transposed_norm = proj<3, 4, float>((Projection * ModelView).invert_transpose() * nm_embeding);
+    varying_uv.set_col(nthvert, model->uv(iface, nthvert));
+    
+    Vec4f nm_embeding = embed<4, 3, float>(model->normal(iface, nthvert), 0.f);
+    Vec3f transposed_norm = proj<3, 4, float>((Projection * ModelView).invert_transpose() * nm_embeding);
 
-        varying_norm.set_col(nthvert, transposed_norm);
+    varying_norm.set_col(nthvert, transposed_norm);
 
-        // homogeneous coordinates
-        Vec4f homogeneous_vertex = Projection * ModelView * embed<4, 3, float>(model->vert(iface, nthvert), 1.f);
-        varying_triangle.set_col(nthvert, homogeneous_vertex);
+    // homogeneous coordinates
+    Vec4f homogeneous_vertex = Projection * ModelView * embed<4, 3, float>(model->vert(iface, nthvert), 1.f);
+    varying_triangle.set_col(nthvert, homogeneous_vertex);
 
-        back_homo_triangle.set_col(nthvert, proj<3, 4, float>(homogeneous_vertex / homogeneous_vertex[3]));
+    back_homo_triangle.set_col(nthvert, proj<3, 4, float>(homogeneous_vertex / homogeneous_vertex[3]));
 
-        return homogeneous_vertex;
-    }
+    return homogeneous_vertex;
+}
 
 bool CommonShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
     Vec3f bn = (varying_norm * bary).normalize();
@@ -62,6 +71,7 @@ bool CommonShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
     Vec3f n = (B * model->normal(uv)).normalize();
 
     float diff = std::max(0.f, n * light_dir);
+    // 算那么多就是为了计算光强
     c = model->diffuse(uv) * diff;
 
     return false;

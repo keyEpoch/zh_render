@@ -7,14 +7,14 @@
 const int width  = 800;
 const int height = 800;
 
-Vec3f light_dir(1, 1, 1);
-Vec3f eye(1, 1, 3);
-Vec3f center(0, 0, 1);
-Vec3f up(0, 1, 0);
+extern Vec3f light_dir;
+extern Vec3f eye;
+extern Vec3f center;
+extern Vec3f up;
 
-Matrix ModelView;
-Matrix Viewport;
-Matrix Projection;
+extern Matrix ModelView;
+extern Matrix Viewport;
+extern Matrix Projection;
 
 /* three important matrix */
 // transfer eye(change the O point)
