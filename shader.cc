@@ -90,14 +90,8 @@ void triangle(mat<4, 3, float>& clipc, BaseShader& shader, TGAImage& image, floa
     mat<3,2,float> pts2;
     Vec4f tmp;
     Vec2f tmp2;
-    for (int i=0; i<3; i++) {
+    for (int i=0; i<3; i++) 
         pts2[i] = proj<2, 4, float>(pts[i]/pts[i][3]);
-        // std::cout << pts2[i] << std::endl;
-        tmp = pts[i]/pts[i][3];
-        tmp2 = proj<2, 4, float>(tmp);
-        std::cout << tmp2 << std::endl;
-        // std::cout << pts[i] << "  " << pts[i][3] << std::endl;
-    }
 
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -116,10 +110,8 @@ void triangle(mat<4, 3, float>& clipc, BaseShader& shader, TGAImage& image, floa
             Vec3f bc_clip    = Vec3f(bc_screen.x/pts[0][3], bc_screen.y/pts[1][3], bc_screen.z/pts[2][3]);
             bc_clip = bc_clip/(bc_clip.x+bc_clip.y+bc_clip.z);
             float frag_depth = clipc[2]*bc_clip;
-            // std::cout << bc_screen << "  " << frag_depth << std::endl;
             if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0 || zbuffer[P.x+P.y*image.get_width()]>frag_depth) continue;
             bool discard = shader.fragment(bc_clip, color, model);
-            // std::cout << "zhanghuan" << std::endl;
             if (!discard) {
                 zbuffer[P.x+P.y*image.get_width()] = frag_depth;
                 image.set(P.x, P.y, color);
@@ -130,7 +122,6 @@ void triangle(mat<4, 3, float>& clipc, BaseShader& shader, TGAImage& image, floa
 
 
 Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec2i P) {
-    // std::cout << A << " " << B << " " << C << std::endl;
     Vec3f s[2];
     Vec3f ret;
     for (int i=2; i--; ) {
@@ -139,7 +130,6 @@ Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec2i P) {
         s[i][2] = A[i]-P[i];
     }
     Vec3f u = cross_product(s[0], s[1]);
-    // std::cout << u << s[0] << " " << s[1] << std::endl;
     if (std::abs(u[2])>1e-4) {   // u[2] 一定不能为 0
         ret.x = 1.f-(u.x+u.y)/u.z;
         ret.y = u.y/u.z;
