@@ -57,7 +57,8 @@ int main(int argc, char** argv) {
     TGAImage frame(width, height, TGAImage::RGB);
 
     for (int i = 0; i < model->nfaces(); ++i) {
-        for (int j = 0; j < 3; ++j) comshader.vertex(i, j, model);
+        for (int j = 0; j < 3; ++j) 
+            comshader.vertex(i, j, model);
         
         triangle(comshader.varying_triangle, comshader, frame, zbuffer, model);
     }

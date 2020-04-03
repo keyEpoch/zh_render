@@ -239,12 +239,10 @@ public:
         return dt<DimCols, T>::det(*this);
     }
 
-    mat<DimRows - 1, DimCols - 1, T>
-    get_minor(size_t row, size_t col) const {
+    mat<DimRows-1,DimCols-1,T> get_minor(size_t row, size_t col) const {
         mat<DimRows-1, DimCols-1, T> ret;
-        for (size_t i = DimRows; i--; ) 
-            for (size_t j=DimCols-1;j--; ret[i][j]=rows[i<row?i:i+1][j<col?j:j+1]);
-        
+        for (size_t i = DimRows-1; i--; )
+            for (size_t j = DimCols-1; j--; ret[i][j] = rows[i<row ? i : i+1][j<col ? j : j+1]);
         return ret;
     }
 
@@ -260,7 +258,8 @@ public:
     }
 
     mat<DimRows,DimCols,T> invert_transpose() {
-        mat<DimRows,DimCols,T> ret = adjugate();
+    
+        mat<DimRows,DimCols,T> ret = adjugate();    
         T tmp = ret[0]*rows[0];
         return ret/tmp;
     }

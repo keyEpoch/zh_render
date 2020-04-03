@@ -33,13 +33,19 @@ bool OnlyTexShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
 }
 
 Vec4f CommonShader::vertex(int iface, int nthvert, Model* model) {
-    varying_uv.set_col(nthvert, model->uv(iface, nthvert));
-    
-    Vec4f nm_embeding = embed<4, 3, float>(model->normal(iface, nthvert), 0.f);
-    Vec3f transposed_norm = proj<3, 4, float>((Projection * ModelView).invert_transpose() * nm_embeding);
 
+    varying_uv.set_col(nthvert, model->uv(iface, nthvert));
+
+    Vec4f nm_embeding = embed<4, 3, float>(model->normal(iface, nthvert), 0.f);
+
+    Projection * ModelView.invert_transpose();
+
+    
+    Vec3f transposed_norm = proj<3, 4, float>((Projection * ModelView).invert_transpose() * nm_embeding);
     varying_norm.set_col(nthvert, transposed_norm);
 
+    // varying_norm.set_col(nthvert, proj<3>((Projection*ModelView).invert_transpose()*embed<4>(model->normal(iface, nthvert), 0.f)));
+    
     // homogeneous coordinates
     Vec4f homogeneous_vertex = Projection * ModelView * embed<4, 3, float>(model->vert(iface, nthvert), 1.f);
     varying_triangle.set_col(nthvert, homogeneous_vertex);
@@ -71,7 +77,8 @@ bool CommonShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
     Vec3f n = (B * model->normal(uv)).normalize();
 
     float diff = std::max(0.f, n * light_dir);
-    // 算那么多就是为了计算光强
+    // 算那么多就是为了计算光强diff
+
     c = model->diffuse(uv) * diff;
 
     return false;
@@ -79,66 +86,40 @@ bool CommonShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
 }
 
 
-void triangle(mat<4, 3, float>& pts, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model) {
+void triangle(mat<4, 3, float>& clipc, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model) {
+    mat<3,4,float> pts  = (Viewport*clipc).transpose(); // transposed to ease access to each of the points
+    mat<3,2,float> pts2;
+    for (int i=0; i<3; i++) pts2[i] = proj<2>(pts[i]/pts[i][3]);
 
-}
-
-/*
-// this method to fill color in triangle can run parallel, so can us gpu for multi-threads
-void triangle(Vec3f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
     Vec2f clamp(image.get_width()-1, image.get_height()-1);
-    
-    mat<3, 2, float> pts2;
-    for (int i = 0; i < 3; ++i) 
-        pts2.set_row(i, pts[i]);
-
-    
-    // pts coords are screen coords
-    for (int i = 0; i < 3; i++) {
-
-        // for (int j = 0; j < 2; j++) { 
-        //     // it will raise an error: expression is not assignable
-        //     bboxmin[j] = std::max(0.f,      std::min(bboxmin[j], pts[i][j]));
-        //     bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
-        
-        bboxmin.x = std::max(0.f,      std::min(bboxmin.x, pts[i].x));
-        bboxmin.y = std::max(0.f,      std::min(bboxmin.y, pts[i].y));
-        
-        bboxmax.x = std::min(clamp.x, std::max(bboxmax.x, pts[i].x));
-        bboxmax.y = std::min(clamp.y, std::max(bboxmax.y, pts[i].y));
-    } // get the minimum region, for I need to judge if the points 
-      // in the region is contained by the triangle
-     
+    for (int i=0; i<3; i++) {
+        for (int j=0; j<2; j++) {
+            bboxmin[j] = std::max(0.f,      std::min(bboxmin[j], pts2[i][j]));
+            bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts2[i][j]));
+        }
+    }
+    Vec2f P;
     TGAColor color;
-    Vec3f P;  // P is supposed to be inside triangle
-    for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++) {
-        for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++) {
-            Vec3f bary = bary_centric(pts2[0], pts2[1], pts2[2], P);   // bary_centric 就是用来判断某点是不是在三角形内
-            // judge if triangle contains P 
-            if (bary.x < 0 || bary.y < 0 || bary.z < 0) 
-                continue;
-            
-            P.z = 0;
-            shader.fragment(bary, color, model);
-            for (int i=0; i<3; i++) 
-                // P.z得到的就是 P 的z坐标
-                // 因为bary_centric得到的就是 (1-u-v, u, v)
-                // P = (1 - u - v) * A + u * B + v * C
-                P.z += pts[i][2]*bary[i];   
-
-            if (zbuffer[int(P.x+P.y*width)] < P.z) {
-                zbuffer[int(P.x+P.y*width)] = P.z;
-
+    for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
+        for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
+            Vec3f bc_screen  = bary_centric(pts2[0], pts2[1], pts2[2], P);
+            Vec3f bc_clip    = Vec3f(bc_screen.x/pts[0][3], bc_screen.y/pts[1][3], bc_screen.z/pts[2][3]);
+            bc_clip = bc_clip/(bc_clip.x+bc_clip.y+bc_clip.z);
+            float frag_depth = clipc[2]*bc_clip;
+            if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0 || zbuffer[int(P.x+P.y*image.get_width())]>frag_depth) continue;
+            bool discard = shader.fragment(bc_clip, color, model);
+            if (!discard) {
+                zbuffer[int(P.x+P.y*image.get_width())] = frag_depth;
                 image.set(P.x, P.y, color);
             }
         }
     }
 }
-*/
 
-Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec3f P) {
+
+Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec2f P) {
     Vec3f s[2];
     Vec3f ret;
     for (int i=2; i--; ) {
