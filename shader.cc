@@ -3,8 +3,8 @@
 #include "shader.h"
 
 
-Vec3f light_dir(1, 1, 1);
-Vec3f eye(1, 1, 3);
+Vec3f light_dir(0.f, 0.f, -1.f);
+Vec3f eye(0, 0, -3);
 Vec3f center(0, 0, 0);
 Vec3f up(0, 1, 0);
 
@@ -31,6 +31,8 @@ bool OnlyTexShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
     c = model->diffuse(uv);
     return false;
 }
+
+
 
 Vec4f CommonShader::vertex(int iface, int nthvert, Model* model) {
 
