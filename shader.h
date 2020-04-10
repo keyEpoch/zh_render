@@ -77,6 +77,14 @@ public:
     mat<2, 3, float> varying_uv;
     mat<3, 3, float> varying_triangle;
 
+    mat<4,4,float> uniform_M;   //  Projection*ModelView
+    mat<4,4,float> uniform_MIT; // (Projection*ModelView).invert_transpose()
+    mat<4,4,float> uniform_Mshadow; // transform framebuffer screen coordinates to shadowbuffer screen coordinates
+
+    // Shader shader(ModelView, (Projection*ModelView).invert_transpose(), M*(Viewport*Projection*ModelView).invert());
+    ShadowShader(Matrix M, Matrix MIT, Matrix MS)
+    : uniform_M(M), uniform_MIT(MIT), uniform_Mshadow(MS), varying_uv(), varying_tri() {}
+
     virtual Vec4f vertex(int iface, int nthvert, Model* model);
     virtual bool fragment(Vec3f bary, TGAColor& color, Model* model);
 };
