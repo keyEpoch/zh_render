@@ -7,6 +7,8 @@
 const int width  = 800;
 const int height = 800;
 
+const float depth = 2000.f;
+
 extern Vec3f light_dir;
 extern Vec3f eye;
 extern Vec3f center;
@@ -58,6 +60,25 @@ public:
     virtual Vec4f vertex(int iface, int nthvert, Model* model);
 
     virtual bool fragment(Vec3f bary, TGAColor& c, Model* model);
+};
+
+class DepthShader : public BaseShader {
+public:
+    mat<3, 3, float> varying_triangle;
+    DepthShader() 
+    : varying_triangle() {}
+
+    virtual Vec4f vertex(int iface, int nthvert, Model* model);
+    virtual bool fragment(Vec3f bary, TGAColor& color, Model* model);
+};
+
+class ShadowShader : public BaseShader {
+public:
+    mat<2, 3, float> varying_uv;
+    mat<3, 3, float> varying_triangle;
+
+    virtual Vec4f vertex(int iface, int nthvert, Model* model);
+    virtual bool fragment(Vec3f bary, TGAColor& color, Model* model);
 };
 
 // void triangle(Vec3f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model);

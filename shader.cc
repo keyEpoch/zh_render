@@ -4,7 +4,7 @@
 
 
 Vec3f light_dir(0.f, 0.f, -1.f);
-Vec3f eye(0, 0, -3);
+Vec3f eye(1, 1, -3);
 Vec3f center(0, 0, 0);
 Vec3f up(0, 1, 0);
 
@@ -31,8 +31,6 @@ bool OnlyTexShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
     c = model->diffuse(uv);
     return false;
 }
-
-
 
 Vec4f CommonShader::vertex(int iface, int nthvert, Model* model) {
 
@@ -72,9 +70,13 @@ bool CommonShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
     mat<3,3,float> B;
     B.set_col(0, i.normalize());
     B.set_col(1, j.normalize());
-    B.set_col(2, bn);
+    B.set_col(2, bn);     // B就是TBN矩阵，tangent的z轴就是由三个端点的normal和bary算出来的normal
 
-    Vec3f n = (B * model->normal(uv)).normalize();
+    // TBN矩阵，用三个点的normal，uv，vertex，外加三角形内部的一点P就可以求出来了
+
+    // normal map 加载的是tangent坐标系的 normal 向量
+    // 这里是将每个点的normal，都从tangent坐标系转到跟light_dir一样的坐标系下去
+    Vec3f n = (B * model->normal(uv)).normalize();   
 
     float diff = std::max(0.f, n * light_dir);
     // 算那么多就是为了计算光强diff
@@ -82,10 +84,32 @@ bool CommonShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
     c = model->diffuse(uv) * diff;
 
     return false;
+}
+
+Vec4f DepthShader::vertex(int iface, int nthvert, Model* model) {
+    Vec4f gl_vertex = embed<4, 3, float>(model->vert(iface, nthvert), 1.f);
+    gl_vertex = Viewport*Projection*ModelView*gl_vertex;
+    varying_triangle.set_col(nthvert, embed<3, 4, float>(gl_vertex/gl_vertex[3]));
+    return gl_vertex;
+}
+
+bool DepthShader::fragment(Vec3f bary, TGAColor& color, Model* model) {
+    Vec3f p = varying_triangle*bary;
+    color = TGAColor(255, 255, 255) * (p.z / depth);
+    return false;
+}
+
+Vec4f ShadowShader::vertex(int iface, int nthvert, Model* model) {
+    mat<2, 3, float> varying_uv;
+    mat<3, 3, float> varying_triangle;
 
 }
 
+bool ShadowShader::fragment(Vec3f bary, TGAColor& color, Model* model) {
 
+}
+
+/*
 void triangle(mat<4, 3, float>& clipc, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model) {
     
     mat<3,4,float> pts = (Viewport*clipc).transpose(); // transposed to ease access to each of the points
@@ -121,6 +145,40 @@ void triangle(mat<4, 3, float>& clipc, BaseShader& shader, TGAImage& image, floa
         }
     }
 }
+*/
+
+void triangle(Vec4f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model) {
+    Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
+    Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+    for (int i=0; i<3; i++) {
+        for (int j=0; j<2; j++) {
+            bboxmin[j] = std::min(bboxmin[j], pts[i][j]/pts[i][3]);
+            bboxmax[j] = std::max(bboxmax[j], pts[i][j]/pts[i][3]);
+        }
+    }
+    Vec2i P;
+    Vec3f bary;
+    int frag_depth;
+    TGAColor color;
+    
+    for (P.x = bboxmin.x; P.x <= bboxmax.x; ++P.x) {
+        for (P.y = bboxmin.y; P.y <= bboxmax.y; ++P.y) {
+            bary = bary_centric(proj<2, 4, float>(pts[0]/pts[0][3]), proj<2, 4, float>(pts[1]/pts[1][3]), \
+            proj<2, 4, float>(pts[2]/pts[2][3]), P);
+            float z = pts[0][2] * bary.x + pts[1][2] * bary.y + pts[2][2] * bary.z;
+            float w = pts[0][3] * bary.x + pts[1][3] * bary.y + pts[2][3] * bary.z;
+            frag_depth = z / w;
+            // judge if P in triangle && frag_depth
+            if (bary.x < 0 || bary.y < 0 || bary.z < 0 || zbuffer[P.x + P.y * image.get_width()] > frag_depth)
+                continue;
+            bool discard = shader.fragment(bary, color, model);
+            if (!discard) {
+                zbuffer[P.x + P.y * image.get_width()] = frag_depth;
+                image.set(P.x, P.y, color);
+            }
+        }
+    }
+}
 
 
 Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec2i P) {
@@ -142,7 +200,7 @@ Vec3f bary_centric(Vec2f A, Vec2f B, Vec2f C, Vec2i P) {
 }
 
 /* three important matrix */
-// transfer eye(change the O point)
+// transfer eye(change the o point)
 void lookat(Vec3f eye, Vec3f center, Vec3f up) {
     Vec3f z = (eye-center).normalize();
     Vec3f x = cross_product(up,z).normalize();
