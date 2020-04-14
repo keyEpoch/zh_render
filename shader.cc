@@ -3,8 +3,8 @@
 #include "shader.h"
 
 
-Vec3f light_dir(0.f, 0.f, -1.f);
-Vec3f eye(1, 1, -3);
+Vec3f light_dir(1, 1, 0);
+Vec3f eye(1, 1, 4);
 Vec3f center(0, 0, 0);
 Vec3f up(0, 1, 0);
 
@@ -13,7 +13,7 @@ Matrix Viewport;
 Matrix Projection;
 
 float* shadow_buffer = NULL;
-float* zbuffer = NULL;
+float* z_buffer = NULL;
 
 BaseShader::~BaseShader() {}
 
@@ -90,15 +90,20 @@ bool CommonShader::fragment(Vec3f bary, TGAColor& c, Model* model) {
 }
 
 Vec4f DepthShader::vertex(int iface, int nthvert, Model* model) {
+    
     Vec4f gl_vertex = embed<4, 3, float>(model->vert(iface, nthvert), 1.f);
+
     gl_vertex = Viewport*Projection*ModelView*gl_vertex;
+    // std::cout << gl_vertex << std::endl;
     varying_triangle.set_col(nthvert, embed<3, 4, float>(gl_vertex/gl_vertex[3]));
+    
     return gl_vertex;
 }
 
 bool DepthShader::fragment(Vec3f bary, TGAColor& color, Model* model) {
     Vec3f p = varying_triangle*bary;
     color = TGAColor(255, 255, 255) * (p.z / depth);
+    
     return false;
 }
 
@@ -195,10 +200,12 @@ void triangle(Vec4f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, M
             float z = pts[0][2] * bary.x + pts[1][2] * bary.y + pts[2][2] * bary.z;
             float w = pts[0][3] * bary.x + pts[1][3] * bary.y + pts[2][3] * bary.z;
             frag_depth = z / w;
+            
             // judge if P in triangle && frag_depth
             if (bary.x < 0 || bary.y < 0 || bary.z < 0 || zbuffer[P.x + P.y * image.get_width()] > frag_depth)
                 continue;
             bool discard = shader.fragment(bary, color, model);
+            
             if (!discard) {
                 zbuffer[P.x + P.y * image.get_width()] = frag_depth;
                 image.set(P.x, P.y, color);
@@ -250,12 +257,22 @@ void projection(float coeff) {   // coeff = -1/c
 }   
 
 // transfer to [(x, y), (x+w, y+h)] from [(-1, -1), (1, 1)]
+// void viewport(int x, int y, int w, int h) {
+//     Viewport = Matrix::identity();
+//     Viewport[0][3] = x+w/2.f;
+//     Viewport[1][3] = y+h/2.f;
+//     Viewport[2][3] = 1.f;    // 不用考虑z轴的时候，就可以设置成1
+//     Viewport[0][0] = w/2.f;
+//     Viewport[1][1] = h/2.f;
+//     Viewport[2][2] = 0;
+// }
+
 void viewport(int x, int y, int w, int h) {
     Viewport = Matrix::identity();
     Viewport[0][3] = x+w/2.f;
     Viewport[1][3] = y+h/2.f;
-    Viewport[2][3] = 1.f;
+    Viewport[2][3] = depth/2.f;
     Viewport[0][0] = w/2.f;
     Viewport[1][1] = h/2.f;
-    Viewport[2][2] = 0;
+    Viewport[2][2] = depth/2.f;
 }

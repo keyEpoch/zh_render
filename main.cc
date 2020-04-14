@@ -6,6 +6,7 @@
 #include "model.h"
 #include "shader.h"
 
+
 const TGAColor white = TGAColor(255, 255, 255, 255);
 const TGAColor red   = TGAColor(255, 0,   0,   255);
 const TGAColor green = TGAColor(0,   255, 0,   255);
@@ -50,8 +51,39 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    model = new Model(argv[1]);
+    light_dir.normalize();
+
     // render round one: obtain shadow_buffer
-    
+    {
+        TGAImage depthimage(width, height, TGAImage::RGB);
+        shadow_buffer = new float[width*height];
+
+        for (int i = width*height; i--; ) 
+            shadow_buffer[i] = -std::numeric_limits<float>::max();
+        
+        lookat(light_dir, center, up);
+        viewport(width/8, height/8, width*3/4, height*3/4);
+        projection(0);
+        
+        std::cout << ModelView <<std::endl;
+		std::cout << Viewport << std::endl;
+		std::cout << Projection << std::endl;
+
+        DepthShader depthshader;
+        // screencorrds: after Viewport 
+        Vec4f screencoords[3];
+
+        for (int i = 0; i < model->nfaces(); ++i) {
+            for (int j = 0; j < 3; ++j) 
+                screencoords[j] = depthshader.vertex(i, j, model);
+                
+            triangle(screencoords, depthshader, depthimage, shadow_buffer, model);
+        }
+        
+        depthimage.flip_vertically();
+        depthimage.write_tga_file("depth.tga");
+    }
 
     // render round two: obtain shadow shader
 
