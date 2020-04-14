@@ -19,6 +19,7 @@ extern Matrix Viewport;
 extern Matrix Projection;
 
 extern float* shadow_buffer;
+extern float* zbuffer;
 
 /* three important matrix */
 // transfer eye(change the O point)

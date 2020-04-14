@@ -13,6 +13,7 @@ Matrix Viewport;
 Matrix Projection;
 
 float* shadow_buffer = NULL;
+float* zbuffer = NULL;
 
 BaseShader::~BaseShader() {}
 
