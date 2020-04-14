@@ -90,16 +90,21 @@ struct vec<3, T> {
         return std::sqrt(x*x + y*y + z*z);
     }
 
+    // vec<3, T> normalize(T l = 1) {
+    //     // *this = (*this) * (l / this->norm());
+    //     // return *this;
+    //     float n = this->norm();
+    //     vec<3, T> ret;
+    //     ret[0] = this->x * (l / n);
+    //     ret[1] = this->y * (l / n);
+    //     ret[2] = this->z * (l / n);
+    //     // std::cout << ret[0] << " " << ret[1] << " " << ret[2] << std::endl;
+    //     return ret;
+    // }
+
     vec<3, T>& normalize(T l = 1) {
-        // *this = (*this) * (l / this->norm());
-        // return *this;
-        float n = this->norm();
-        vec<3, T> ret;
-        ret[0] = this->x * (l / n);
-        ret[1] = this->y * (l / n);
-        ret[2] = this->z * (l / n);
-        // std::cout << ret[0] << " " << ret[1] << " " << ret[2] << std::endl;
-        return ret;
+        *this = (*this)*(l/norm());
+        return *this;
     }
 
     T x, y, z;
@@ -128,7 +133,7 @@ vec<DIM, T> operator+(vec<DIM, T> va, const vec<DIM, T>& vb) {
 
 template <size_t DIM, typename T> 
 vec<DIM, T> operator-(vec<DIM, T> va, const vec<DIM, T>& vb) {
-    for (size_t i = DIM; i--; va[i] = vb[i] - va[i]);
+    for (size_t i = DIM; i--; va[i] = va[i] - vb[i]);
     return va;
 }
 
@@ -160,9 +165,9 @@ vec<LEN, T> proj(const vec<DIM, T>& v) {
     return ret;
 }
 
-template <typename T>
-vec<3, T> cross_product(vec<3, T> va, vec<3, T> vb) {
-    return vec<3, T>(va.y*vb.z - va.z*vb.y, va.z*vb.x - va.x*vb.z, va.x*vb.y - va.y*vb.x);
+template <typename T> 
+vec<3,T> cross_product(vec<3,T> v1, vec<3,T> v2) {
+    return vec<3,T>(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
 }
 
 template <size_t DIM, typename T>
