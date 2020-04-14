@@ -34,7 +34,7 @@ struct TGAColor {
 	TGAColor() : val(0), bytespp(1) {
 	}
 
-	TGAColor(unsigned char R, unsigned char G, unsigned char B, unsigned char A) 
+	TGAColor(unsigned char R, unsigned char G, unsigned char B, unsigned char A = 255) 
     : b(B), g(G), r(R), a(A), bytespp(4) {
 	}
 
@@ -52,7 +52,7 @@ struct TGAColor {
 		}
 	}
 
-    char operator[](int i) {
+    unsigned char& operator[](const int i) {
         assert(i < 4);
         return raw[i];
     }

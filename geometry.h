@@ -114,11 +114,11 @@ T operator*(const vec<DIM, T>& va, const vec<DIM, T>& vb) {
     return ret;
 }
 
-// template <size_t DIM, typename T>
-// vec<DIM, T> operator*(vec<DIM, T> va, const vec<DIM, T>& vb) {
-//     for (size_t i = DIM; i--; va[i] *= vb[i]);
-//     return va;
-// }
+template <size_t DIM, typename T>
+vec<DIM, T> operator*(vec<DIM, T> va, const T& vb) {
+    for (size_t i = DIM; i--; va[i] *= vb);
+    return va;
+}
 
 template <size_t DIM, typename T>
 vec<DIM, T> operator+(vec<DIM, T> va, const vec<DIM, T>& vb) {
