@@ -12,6 +12,8 @@ Matrix ModelView;
 Matrix Viewport;
 Matrix Projection;
 
+float* shadow_buffer = NULL;
+
 BaseShader::~BaseShader() {}
 
 Vec4f OnlyTexShader::vertex(int iface, int nthvert, Model* model) {
@@ -100,13 +102,37 @@ bool DepthShader::fragment(Vec3f bary, TGAColor& color, Model* model) {
 }
 
 Vec4f ShadowShader::vertex(int iface, int nthvert, Model* model) {
-    mat<2, 3, float> varying_uv;
-    mat<3, 3, float> varying_triangle;
-
+    varying_uv.set_col(nthvert, model->uv(iface, nthvert));
+    Vec4f gl_vertex = Viewport*Projection*ModelView*embed<4, 3, float>(model->vert(iface, nthvert), 1.f);
+    varying_triangle.set_col(nthvert, proj<3, 4, float>(gl_vertex/gl_vertex[3]));
+    return gl_vertex;
 }
 
 bool ShadowShader::fragment(Vec3f bary, TGAColor& color, Model* model) {
+    Vec2i uv = varying_uv * bary;
 
+    // light_dir p
+    Vec4f ld_p = uniform_Mshadow*embed<4, 3, float>(varying_triangle*bary, 1.f);
+    ld_p = ld_p / ld_p[3];
+    int idx = int(ld_p[0]) + int(ld_p[1]) * width;
+    // define shadow
+    float shadow = .3f + .7f * (ld_p[2] >= shadow_buffer[idx]);
+
+    // transfer normal to eye coordinate
+    Vec3f n = proj<3, 4, float>(uniform_MIT*embed<4, 3, float>(model->normal(uv)));
+    n = n.normalize();
+    Vec3f l = proj<3, 4, float>(uniform_M*embed<4, 3, float>(light_dir, 0));
+    l = l.normalize();
+    float tmp = n*l*2.f;
+    Vec3f r = (n*tmp - l).normalize();   // reflect light
+
+    float spec = pow(std::max(r.z, 0.f), model->specular(uv));
+    float diff = std::max(0.f, n*l);
+    TGAColor c = model->diffuse(uv);
+
+    for (int i = 0; i < 3; ++i) 
+        color[i] = std::min<float>(20 + c[i]*shadow*(1.2f*diff + .6f*spec), 255);
+    return false;
 }
 
 /*

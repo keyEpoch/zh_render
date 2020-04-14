@@ -18,6 +18,8 @@ extern Matrix ModelView;
 extern Matrix Viewport;
 extern Matrix Projection;
 
+extern float* shadow_buffer;
+
 /* three important matrix */
 // transfer eye(change the O point)
 void lookat(Vec3f eye, Vec3f center, Vec3f up);
@@ -83,7 +85,7 @@ public:
 
     // Shader shader(ModelView, (Projection*ModelView).invert_transpose(), M*(Viewport*Projection*ModelView).invert());
     ShadowShader(Matrix M, Matrix MIT, Matrix MS)
-    : uniform_M(M), uniform_MIT(MIT), uniform_Mshadow(MS), varying_uv(), varying_tri() {}
+    : uniform_M(M), uniform_MIT(MIT), uniform_Mshadow(MS), varying_uv(), varying_triangle() {}
 
     virtual Vec4f vertex(int iface, int nthvert, Model* model);
     virtual bool fragment(Vec3f bary, TGAColor& color, Model* model);
