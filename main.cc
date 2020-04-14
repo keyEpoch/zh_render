@@ -61,14 +61,14 @@ int main(int argc, char** argv) {
 
         for (int i = width*height; i--; ) 
             shadow_buffer[i] = -std::numeric_limits<float>::max();
-        
+
         lookat(light_dir, center, up);
         viewport(width/8, height/8, width*3/4, height*3/4);
         projection(0);
         
-        std::cout << ModelView <<std::endl;
-		std::cout << Viewport << std::endl;
-		std::cout << Projection << std::endl;
+        // std::cout << ModelView <<std::endl;
+		// std::cout << Viewport << std::endl;
+		// std::cout << Projection << std::endl;
 
         DepthShader depthshader;
         // screencorrds: after Viewport 

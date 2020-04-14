@@ -41,9 +41,9 @@ Model::Model(const char *filename)
         }
     }
     std::cerr << "# v# " << verts_.size() << " f# "  << faces_.size() << std::endl;
-    load_texture("./obj/head_spec.tga", specularmap_);
-    load_texture("./obj/head_nm.tga", normalmap_);
-    load_texture("./obj/head_diffuse.tga", diffusemap_);
+    load_texture(filename, "_diffuse.tga", diffusemap_);
+    load_texture(filename, "_nm.tga",      normalmap_);
+    load_texture(filename, "_spec.tga",    specularmap_);
 }
 
 Model::~Model() {
@@ -104,11 +104,21 @@ TGAColor Model::face_one_color(int iface) {
     return c;
 }
 
-void Model::load_texture(std::string filename, TGAImage& image) {
-    bool read_tga_state = image.read_tga_file(filename.c_str());
-    if (read_tga_state) {
-        std::cerr << "load texture file ok!" << std::endl;
-        image.flip_vertically();
+// void Model::load_texture(std::string filename, TGAImage& image) {
+//     bool read_tga_state = image.read_tga_file(filename.c_str());
+//     if (read_tga_state) {
+//         std::cerr << "load texture file ok!" << std::endl;
+//         image.flip_vertically();
+//     }
+//     else std::cerr << "load texture file failed!" << std::endl;
+// }
+
+void Model::load_texture(std::string filename, const char *suffix, TGAImage &img) {
+    std::string texfile(filename);
+    size_t dot = texfile.find_last_of(".");
+    if (dot!=std::string::npos) {
+        texfile = texfile.substr(0,dot) + std::string(suffix);
+        std::cerr << "texture file " << texfile << " loading " << (img.read_tga_file(texfile.c_str()) ? "ok" : "failed") << std::endl;
+        img.flip_vertically();
     }
-    else std::cerr << "load texture file failed!" << std::endl;
 }

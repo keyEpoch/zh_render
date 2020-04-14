@@ -9,7 +9,8 @@ private:
     std::vector<Vec2f> uv_;
     std::vector<Vec3f> norms_;
 	std::vector<std::vector<Vec3i> > faces_;
-    void load_texture(std::string filename, TGAImage& img);
+    // void load_texture(std::string filename, TGAImage& img);
+    void load_texture(std::string filename, const char *suffix, TGAImage &img);
     TGAImage diffusemap_;
     TGAImage normalmap_;
     TGAImage specularmap_;
