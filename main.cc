@@ -45,31 +45,16 @@ float dot_product(Vec3f va, Vec3f vb) {
 }
 
 int main(int argc, char** argv) {
-    if (2==argc) {
-        model = new Model(argv[1]);
-    } else {
-        model = new Model("obj/head.obj");
+    if (2 > argc) {
+        std::cerr << "need obj file!" << std::endl;
+        return 1;
     }
 
-    CommonShader comshader;
+    // render round one: obtain shadow_buffer
+    
 
-    float* zbuffer = new float[width*height];
-    TGAImage frame(width, height, TGAImage::RGB);
+    // render round two: obtain shadow shader
 
-    lookat(eye, center, up);
-    viewport(width/8, height/8, width*3/4, height*3/4);
-    projection(-1.f/(eye-center).norm());
-    light_dir = proj<3>((Projection*ModelView*embed<4>(light_dir, 0.f))).normalize();
 
-    for (int i = 0; i < model->nfaces(); ++i) {
-        for (int j = 0; j < 3; ++j) 
-            comshader.vertex(i, j, model);
-        
-        triangle(comshader.varying_triangle, comshader, frame, zbuffer, model);
-    }
-
-    frame.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-    frame.write_tga_file("output.tga");
-    delete model;
     return 0;
 }
