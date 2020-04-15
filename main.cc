@@ -85,6 +85,29 @@ int main(int argc, char** argv) {
         depthimage.write_tga_file("depth.tga");
     }
 
+    {
+        Matrix M = Viewport*Projection*ModelView;
+
+        TGAImage shadowimage(width, height, TGAImage::RGB);
+        z_buffer = new float[width*height];
+        // redefine transfer matrices
+        lookat(eye, center, up);
+        projection(-1.f/(eye - center).norm());
+        viewport(width/8, height/8, width*3/4, height*3/4);
+
+        ShadowShader shadowshader(ModelView, (Projection*ModelView).invert_transpose(), M*(Viewport*Projection*ModelView).invert());
+        Vec4f screen_coords[3];
+        
+        for (int i = 0; i < model->nfaces(); i++) {
+            for (int j = 0; j < 3; j++) 
+                screen_coords[j] = shadowshader.vertex(i, j, model);
+            
+            triangle(screen_coords, shadowshader, shadowimage, z_buffer, model);
+        }
+        shadowimage.flip_vertically(); // to place the origin in the bottom left corner of the image
+        shadowimage.write_tga_file("framebuffer.tga");
+    }
+
     // render round two: obtain shadow shader
 
 
