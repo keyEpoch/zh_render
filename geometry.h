@@ -9,6 +9,7 @@
 template <size_t DimCols, size_t DimRows, typename T>
 struct mat;
 
+
 /* Vector */ 
 template <size_t DIM, typename T>
 struct vec {
@@ -56,6 +57,7 @@ struct vec<2, T> {
 
     T x, y;
 };
+
 
 template <typename T>
 struct vec<3, T> {

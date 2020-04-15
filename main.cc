@@ -84,10 +84,8 @@ int main(int argc, char** argv) {
         depthimage.flip_vertically();
         depthimage.write_tga_file("depth.tga");
     }
-
+    Matrix M = Viewport*Projection*ModelView;
     {
-        Matrix M = Viewport*Projection*ModelView;
-
         TGAImage shadowimage(width, height, TGAImage::RGB);
         z_buffer = new float[width*height];
         // redefine transfer matrices
