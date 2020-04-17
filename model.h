@@ -32,7 +32,7 @@ public:
     Vec3f normal(int iface, int nthvert);
 
     TGAColor diffuse(Vec2f uv);
-    float specular(Vec2i uv);
+    float specular(Vec2f uv);
 
     TGAColor face_one_color(int iface);
 };
