@@ -86,7 +86,8 @@ float Model::specular(Vec2f uvf) {
     return specularmap_.get(uv[0], uv[1])[0]/1.f;
 }
 
-Vec3f Model::normal(Vec2i uv) {
+Vec3f Model::normal(Vec2f uvf) {
+    Vec2f uv(uvf[0]*normalmap_.get_width(), uvf[1]*normalmap_.get_height());
     TGAColor c = normalmap_.get(uv[0], uv[1]);
     Vec3f res;
     for (int i = 0; i < 3; ++i) 

@@ -28,7 +28,7 @@ public:
 
 	std::vector<int> face(int idx);     // return to the three vertices indexs
 
-    Vec3f normal(Vec2i uv);
+    Vec3f normal(Vec2f uvf);
     Vec3f normal(int iface, int nthvert);
 
     TGAColor diffuse(Vec2f uv);
