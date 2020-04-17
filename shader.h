@@ -4,7 +4,7 @@
 #include "geometry.h"
 #include "model.h"
 
-#define coutdebug() std::cout << "zhanghuan" << std::endl;
+#define coutdebug(ß) std::cout << "zhanghuan" << std::endl;
 
 const int width  = 800;
 const int height = 800;

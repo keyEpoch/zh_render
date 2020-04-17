@@ -116,88 +116,25 @@ Vec4f ShadowShader::vertex(int iface, int nthvert, Model* model) {
     return gl_vertex;
 }
 
-bool ShadowShader::fragment(Vec3f bar, TGAColor &color, Model* model) {
-        Vec4f sb_p = uniform_Mshadow*embed<4>(varying_triangle*bar); // corresponding point in the shadow buffer
-        sb_p = sb_p/sb_p[3];
-        int idx = int(sb_p[0]) + int(sb_p[1])*width; // index in the shadowbuffer array
-        float shadow = .3+.7*(shadow_buffer[idx] <= sb_p[2]); // magic coeff to avoid z-fighting
-        Vec2f uv = varying_uv*bar;                 // interpolate uv for the current pixel
-        Vec3f n = proj<3>(uniform_MIT*embed<4, 3, float>(model->normal(uv), 0)).normalize(); // normal
-        Vec3f l = proj<3>(uniform_M  *embed<4, 3, float>(light_dir, 0)).normalize(); // light vector
-        Vec3f r = (n*(n*l*2.f) - l).normalize();   // reflected light
-        float spec = pow(std::max(r.z, 0.0f), model->specular(uv));
-        float diff = std::max(0.f, n*l);
-        TGAColor c = model->diffuse(uv);
-        for (int i=0; i<3; i++) 
-            color[i] = std::min<float>(20 + c[i]*shadow*(1.2*diff + .6*spec), 255);
-        // color = model->diffuse(uv);
-        return false;
-    }
-
-// bool ShadowShader::fragment(Vec3f bary, TGAColor& color, Model* model) {
-//     Vec2i uv = varying_uv * bary;
-
-//     // light_dir p
-//     Vec4f ld_p = uniform_Mshadow*embed<4, 3, float>(varying_triangle*bary, 1.f);
-//     ld_p = ld_p / ld_p[3];
-//     int idx = int(ld_p[0]) + int(ld_p[1]) * width;
-//     // define shadow
-//     float shadow = .3f + .7f * (ld_p[2] >= shadow_buffer[idx]);
-
-//     // transfer normal to eye coordinate
-//     Vec3f n = proj<3, 4, float>(uniform_MIT*embed<4, 3, float>(model->normal(uv)));
-//     n = n.normalize();
-//     Vec3f l = proj<3, 4, float>(uniform_M*embed<4, 3, float>(light_dir, 0));
-//     l = l.normalize();
+bool ShadowShader::fragment(Vec3f bary, TGAColor &color, Model* model) {
+    Vec4f light_dir_p = uniform_Mshadow*embed<4>(varying_triangle*bary); // corresponding point in the shadow buffer
+    light_dir_p = light_dir_p/light_dir_p[3];
+    int idx = int(light_dir_p[0]) + int(light_dir_p[1])*width; // index in the shadowbuffer array
+    float shadow = .3+.7*(shadow_buffer[idx] <= light_dir_p[2]); // magic coeff to avoid z-fighting
+    Vec2f uv = varying_uv*bary;                 // interpolate uv for the current pixel
+    Vec3f n = proj<3>(uniform_MIT*embed<4, 3, float>(model->normal(uv), 0)).normalize(); // normal
+    Vec3f l = proj<3>(uniform_M  *embed<4, 3, float>(light_dir, 0)).normalize(); // light vector
+    Vec3f r = (n*(n*l*2.f) - l).normalize();   // reflected light
+    float spec = pow(std::max(r.z, 0.0f), model->specular(uv));   // model->specular(uv) is an unsigned int 
+    float diff = std::max(0.f, n*l);
     
-//     Vec3f r = (n*(n*l*2.f) - l).normalize();   // reflect light
-
-//     float spec = pow(std::max(r.z, 0.f), model->specular(uv));
-//     float diff = std::max(0.f, n*l);
-//     color = model->diffuse(uv);
-
-//     // for (int i = 0; i < 3; ++i) 
-//         // color[i] = std::min<float>(20 + c[i]*shadow*(1.2f*diff + .6f*spec), 255);
-//     return false;
-// }
-
-/*
-void triangle(mat<4, 3, float>& clipc, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model) {
-    
-    mat<3,4,float> pts = (Viewport*clipc).transpose(); // transposed to ease access to each of the points
-    mat<3,2,float> pts2;
-    Vec4f tmp;
-    Vec2f tmp2;
+    TGAColor c = model->diffuse(uv);
     for (int i=0; i<3; i++) 
-        pts2[i] = proj<2, 4, float>(pts[i]/pts[i][3]);
-
-    Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
-    Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
-    Vec2f clamp(image.get_width()-1, image.get_height()-1);
-    for (int i=0; i<3; i++) {
-        for (int j=0; j<2; j++) {
-            bboxmin[j] = std::max(0.f,      std::min(bboxmin[j], pts2[i][j]));
-            bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts2[i][j]));
-        }
-    }
-    Vec2i P;
-    TGAColor color;
-    for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
-        for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
-            Vec3f bc_screen  = bary_centric(pts2[0], pts2[1], pts2[2], P);
-            Vec3f bc_clip    = Vec3f(bc_screen.x/pts[0][3], bc_screen.y/pts[1][3], bc_screen.z/pts[2][3]);
-            bc_clip = bc_clip/(bc_clip.x+bc_clip.y+bc_clip.z);
-            float frag_depth = clipc[2]*bc_clip;
-            if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0 || zbuffer[P.x+P.y*image.get_width()]>frag_depth) continue;
-            bool discard = shader.fragment(bc_clip, color, model);
-            if (!discard) {
-                zbuffer[P.x+P.y*image.get_width()] = frag_depth;
-                image.set(P.x, P.y, color);
-            }
-        }
-    }
+        color[i] = std::min<float>(20 + c[i]*shadow*(1.2*diff + .6*spec), 255);
+    
+    return false;
 }
-*/
+
 
 void triangle(Vec4f* pts, BaseShader& shader, TGAImage& image, float* zbuffer, Model* model) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
